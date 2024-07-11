@@ -1,0 +1,84 @@
+/* .custom-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 2px;
+}
+
+.custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #4a90e2;
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #fff;
+} */
+
+/* .custom-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #4a90e2;
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #fff;
+} */
+
+/* .custom-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 2px;
+  background: #4a90e2;
+} */
+
+/* .custom-slider::-moz-range-track {
+  width: 100%;
+  height: 2px;
+  background: #4a90e2;
+} */
+/* 
+.custom-slider::-ms-track {
+  width: 100%;
+  height: 2px;
+  background: transparent;
+  border-color: transparent;
+  border-width: 6px 0;
+  color: transparent;
+} */
+
+.vertical-slider {
+  -webkit-appearance: none;
+  width: 8px; /* Width of the slider, adjust as needed */
+  height: 100%; /* Full height */
+  position: absolute;
+  top: 0;
+  left: 50%; /* Centered horizontally */
+  transform: translateX(-50%); /* Centered horizontally */
+  z-index: 20;
+  background: transparent; /* Make the background transparent */
+}
+
+.vertical-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 50px; /* Thumb width */
+  height: 50px; /* Thumb height */
+  background: #4a90e2; /* Thumb color */
+  cursor: grab;
+  border-radius: 50%;
+  border: 2px solid #fff; /* Thumb border */
+  background: url(../assets/OIP.jpeg);
+  background-size: cover;
+}
+.vertical-slider::-moz-range-thumb {
+  width: 20px; /* Thumb width */
+  height: 20px; /* Thumb height */
+  background: #4a90e2; /* Thumb color */
+  cursor: grab;
+  border-radius: 50%;
+  border: 2px solid #fff; /* Thumb border */
+  background: url(../assets/OIP.jpeg);
+  background-size: cover;
+
+  border-radius: 50%;
+  border: none;
+}
