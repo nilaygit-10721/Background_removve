@@ -19,7 +19,7 @@ const Upload = () => {
 
     try {
       const response = await axios.post(
-        "https://background-remove-xxhl.onrender.com/",
+        "https://background-remove-xxhl.onrender.com/remove-background",
         formData,
         {
           headers: {
