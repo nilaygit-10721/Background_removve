@@ -40,6 +40,17 @@ const Upload = () => {
     }
   };
 
+  const handledownload = () => {
+    if (processedImageUrl) {
+      const link = document.createElement("a");
+      link.href = processedImageUrl;
+      link.download = "bg-remove-image.png";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Upload Your Image</h1>
@@ -63,6 +74,12 @@ const Upload = () => {
         <div className="mt-4">
           <h2 className="text-xl font-bold mb-2">Processed Image:</h2>
           <img src={processedImageUrl} alt="Processed" className="max-w-full" />
+          <button
+            onClick={handledownload}
+            className="  bg-blue-700 hover:bg-blue-500 py-2 px-4  rounded-lg text-white  mt-auto"
+          >
+            Download
+          </button>
         </div>
       )}
     </div>
