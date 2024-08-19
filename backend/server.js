@@ -1,5 +1,4 @@
 import express from "express";
-import multer from "multer";
 import fetch from "node-fetch";
 import FormData from "form-data";
 import fs from "fs";
@@ -9,37 +8,17 @@ import cors from "cors";
 const app = express();
 const port = 3000;
 
-// Enable CORS for all routes
 app.use(cors());
+app.use(express.json());
 
-// Set up Multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
-  },
-});
-const upload = multer({ storage: storage });
-
-// Create an uploads folder if it doesn't exist
-if (!fs.existsSync("uploads")) {
-  fs.mkdirSync("uploads");
-}
-
-// Function to remove background using remove.bg API
-async function removeBg(imagePath) {
+async function removeBg(imageUrl) {
   const formData = new FormData();
   formData.append("size", "auto");
-  formData.append("image_file", fs.createReadStream(imagePath));
+  formData.append("image_url", imageUrl);
 
   const response = await fetch("https://api.remove.bg/v1.0/removebg", {
     method: "POST",
-    headers: { "X-Api-Key": "TeyjDz6FiALt63DML3amk3XV" }, // Replace with your remove.bg API key
+    headers: { "X-Api-Key": "TeyjDz6FiALt63DML3amk3XV" },
     body: formData,
   });
 
@@ -50,20 +29,22 @@ async function removeBg(imagePath) {
   }
 }
 
-// Route to handle file uploads and background removal
-app.post("/remove-background", upload.single("image"), async (req, res) => {
+app.post("/remove-background", async (req, res) => {
   try {
-    const inputPath = req.file.path;
-    const outputPath = `uploads/processed-${req.file.filename}`;
+    const { imageUrl } = req.body;
 
-    // Remove background
-    const rbgResultData = await removeBg(inputPath);
+    if (!imageUrl) {
+      return res.status(400).send("Image URL is required.");
+    }
+
+    const rbgResultData = await removeBg(imageUrl);
+
+    const outputPath = `processed-${Date.now()}.png`;
     fs.writeFileSync(outputPath, Buffer.from(rbgResultData));
 
     res.download(outputPath, (err) => {
       if (err) throw err;
-      // Delete the files after download
-      fs.unlinkSync(inputPath);
+
       fs.unlinkSync(outputPath);
     });
   } catch (error) {
@@ -72,7 +53,6 @@ app.post("/remove-background", upload.single("image"), async (req, res) => {
   }
 });
 
-// Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

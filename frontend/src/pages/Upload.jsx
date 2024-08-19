@@ -73,10 +73,14 @@ const Upload = () => {
       {processedImageUrl && (
         <div className="mt-4">
           <h2 className="text-xl font-bold mb-2">Processed Image:</h2>
-          <img src={processedImageUrl} alt="Processed" className="max-w-full" />
+          <img
+            src={processedImageUrl}
+            alt="Processed"
+            className="max-w-full mb-3"
+          />
           <button
             onClick={handledownload}
-            className="  bg-blue-700 hover:bg-blue-500 py-2 px-4  rounded-lg text-white  mt-auto"
+            className="bg-blue-700 hover:bg-blue-500 text-white py-2 px-4 rounded-lg flex lg:mt-12 sm:mt-12"
           >
             Download
           </button>
