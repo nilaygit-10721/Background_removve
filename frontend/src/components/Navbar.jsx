@@ -1,34 +1,54 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import bg from "../assets/bg-removebg-preview.png";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
-const Navbar = () => {
+function Navbar() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    toast.success("Logged out successfully");
+    navigate("/login");
+  };
+
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50 backdrop-blur-lg">
-      <div className="container flex   ">
-        <div className="flex  ">
-          <Link to="/">
-            <img src={bg} className="h-20 w-24 " alt="image" />
+    <nav className="bg-gray-800 p-4">
+      <div className="container mx-auto flex justify-between items-center">
+        <Link to="/" className="text-white text-2xl font-bold">
+          Background Remover
+        </Link>
+        <div className="space-x-4">
+          <Link to="/" className="text-white hover:text-gray-300">
+            Home
           </Link>
-        </div>
-
-        <div className="flex mx-[3rem]   items-center space-x-6">
-          <Link
-            to="/"
-            className="flex flex-col items-center hover:text-yellow-800"
-          >
-            <span className="text-lg">Home</span>
-          </Link>
-          <Link
-            to="/upload"
-            className="flex flex-col items-center hover:text-yellow-800  "
-          >
-            <span className="text-lg">Remove Background</span>
-          </Link>
+          {user ? (
+            <>
+              <Link to="/profile" className="text-white hover:text-gray-300">
+                Profile
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-white hover:text-gray-300"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-white hover:text-gray-300">
+                Login
+              </Link>
+              <Link to="/register" className="text-white hover:text-gray-300">
+                Register
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>
   );
-};
+}
 
 export default Navbar;
