@@ -24,7 +24,7 @@ mongoose
 
 // Routes
 app.use("/api/users", userRoutes);
-app.use("/api/bg-removal", bgRemovalRoutes);
+app.use("/api", bgRemovalRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

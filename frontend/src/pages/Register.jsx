@@ -8,19 +8,16 @@ function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-
+  const backend = import.meta.env.VITE_BACKEND;
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/users/register",
-        {
-          name,
-          email,
-          password,
-        }
-      );
+      const response = await axios.post(`${backend}/api/users/register`, {
+        name,
+        email,
+        password,
+      });
 
       // Save user and token to local storage
       localStorage.setItem("user", JSON.stringify(response.data.data));

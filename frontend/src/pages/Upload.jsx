@@ -1,230 +1,253 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import {
   Loader2,
   Upload as UploadIcon,
   Image as ImageIcon,
+  X as XIcon,
+  Download,
+  RotateCw,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 const Upload = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const [file, setFile] = useState(location.state?.file || null);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const location = useLocation();
+  const [file, setFile] = useState(null);
   const [processedImageUrl, setProcessedImageUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const backend = import.meta.env.VITE_BACKEND;
 
-  // File selection handler
+  // Check for passed image from home page
+  useEffect(() => {
+    if (location.state?.image) {
+      const { file: passedFile, previewUrl: passedPreview } =
+        location.state.image;
+      setFile(passedFile);
+      setPreviewUrl(passedPreview);
+    }
+  }, [location.state]);
+
   const handleFileSelect = (e) => {
     const selectedFile = e.target.files[0];
-
-    // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
     if (!selectedFile) {
       setError("No file selected");
       return;
     }
 
     if (!allowedTypes.includes(selectedFile.type)) {
-      setError("Invalid file type. Please upload JPEG, PNG, GIF, or WebP.");
+      setError("Please upload an image (JPEG, PNG, GIF, or WebP)");
       return;
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (selectedFile.size > maxSize) {
-      setError("File is too large. Maximum size is 10MB.");
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setError("Image must be smaller than 10MB");
       return;
     }
 
-    // Create preview URL
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreviewUrl(reader.result);
+      setError(null);
     };
     reader.readAsDataURL(selectedFile);
 
     setFile(selectedFile);
+    setProcessedImageUrl(null);
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    setPreviewUrl(null);
+    setProcessedImageUrl(null);
     setError(null);
   };
 
-  // Handle file upload and background removal
   const handleFileUpload = async () => {
-    // Validate file before upload
     if (!file) {
-      setError("Please select a file first");
+      setError("Please select an image first");
       return;
     }
 
     setLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append("image", file);
-
     try {
-      const response = await axios.post(
-        "https://background-remove-xxhl.onrender.com/remove-background",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          responseType: "blob", // Ensure the response is handled as a blob
-          timeout: 60000, // 60 seconds timeout
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            console.log(`Upload progress: ${percentCompleted}%`);
-          },
-        }
-      );
-
-      // Create a URL for the processed image and display it
-      const imageUrl = URL.createObjectURL(new Blob([response.data]));
-      setProcessedImageUrl(imageUrl);
-    } catch (err) {
-      // More detailed error handling
-      if (err.response) {
-        setError(
-          `Server Error: ${err.response.status} - ${err.response.statusText}`
-        );
-      } else if (err.request) {
-        setError(
-          "No response received from server. Please check your internet connection."
-        );
-      } else {
-        setError("Error uploading file. Please try again.");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        throw new Error("Please login to continue");
       }
-      console.error(err);
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await axios.post(`${backend}/api/bg-removal`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: "blob",
+      });
+
+      const imageUrl = URL.createObjectURL(response.data);
+      setProcessedImageUrl(imageUrl);
+      toast.success("Background removed successfully!");
+    } catch (err) {
+      let errorMessage = "Failed to process image";
+      if (err.response?.data instanceof Blob) {
+        errorMessage = await err.response.data.text();
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  // Download processed image
   const handleDownload = () => {
     if (processedImageUrl) {
       const link = document.createElement("a");
       link.href = processedImageUrl;
-      link.download = `bg-removed-${file.name}`;
+      link.download = `bg-removed-${file.name.replace(/\.[^/.]+$/, "")}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      toast.success("Download started!");
     }
   };
 
-  // Clean up blob URLs to prevent memory leaks
+  // Clean up object URLs
   useEffect(() => {
     return () => {
-      if (processedImageUrl) {
-        URL.revokeObjectURL(processedImageUrl);
-      }
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      if (processedImageUrl) URL.revokeObjectURL(processedImageUrl);
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [processedImageUrl, previewUrl]);
 
   return (
-    <div className="container mx-auto p-4 max-w-md bg-gradient-to-br from-blue-50 to-white min-h-screen flex flex-col justify-center">
-      <div className="bg-white shadow-2xl rounded-2xl p-6 border border-gray-100">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800 flex items-center justify-center">
-          <ImageIcon className="mr-3 text-blue-500" />
-          Background Remover
-        </h1>
+    <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Background Remover</h1>
+        <p className="text-gray-600 mt-1">
+          Upload an image to remove its background
+        </p>
+      </div>
 
-        {/* File Input */}
-        <div className="mb-4">
-          <label
-            htmlFor="file-upload"
-            className="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg cursor-pointer transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center"
-          >
-            <UploadIcon className="mr-2" />
-            {file ? `Change File (${file.name})` : "Select Image"}
-            <input
-              id="file-upload"
-              type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </label>
-        </div>
-
-        {/* Preview Image */}
-        {previewUrl && !processedImageUrl && (
-          <div className="mb-4 relative">
-            <div className="border-2 border-blue-100 rounded-lg overflow-hidden shadow-md">
+      {/* File Upload Area */}
+      <div className="mb-6">
+        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors bg-gray-50">
+          {previewUrl ? (
+            <div className="relative w-full h-full">
               <img
                 src={previewUrl}
                 alt="Preview"
-                className={`w-full h-auto object-cover transition-all duration-500 ease-in-out ${
-                  loading ? "filter blur-sm opacity-50 scale-105" : ""
-                }`}
+                className="w-full h-full object-contain rounded-lg"
               />
-              {loading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                  <Loader2 className="animate-spin text-white w-12 h-12" />
-                </div>
-              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearFile();
+                }}
+                className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100"
+              >
+                <XIcon className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+              <UploadIcon className="w-8 h-8 mb-3 text-gray-500" />
+              <p className="text-sm text-gray-500">
+                <span className="font-semibold">Click to upload</span> or drag
+                and drop
+              </p>
+              <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+        </label>
+      </div>
 
-        {/* Upload and Process Button */}
+      {/* Error Message */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex space-x-3 mb-6">
         <button
-          className={`w-full py-3 px-4 rounded-lg text-white flex items-center justify-center space-x-2 transition-all duration-300 ease-in-out transform ${
-            file && !loading
-              ? "bg-green-500 hover:bg-green-600 hover:scale-105"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
           onClick={handleFileUpload}
           disabled={!file || loading}
+          className={`flex-1 py-2 px-4 rounded-lg font-medium flex items-center justify-center transition-colors ${
+            !file || loading
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+          }`}
         >
           {loading ? (
             <>
-              <Loader2 className="animate-spin mr-2" />
+              <Loader2 className="animate-spin mr-2" size={18} />
               Processing...
             </>
           ) : (
-            "Remove Background"
+            <>
+              <ImageIcon className="mr-2" size={18} />
+              Remove Background
+            </>
           )}
         </button>
+      </div>
 
-        {/* Error Handling */}
-        {error && (
-          <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg animate-pulse">
-            {error}
-          </div>
-        )}
-
-        {/* Processed Image Display */}
-        {processedImageUrl && (
-          <div className="mt-6 animate-fade-in">
-            <h2 className="text-xl font-bold mb-2 text-center text-gray-800">
-              Processed Image
-            </h2>
-            <div className="border-2 border-gray-200 rounded-lg p-2 shadow-lg">
-              <img
-                src={processedImageUrl}
-                alt="Background Removed"
-                className="max-w-full mx-auto mb-4 rounded-md transition-all duration-500 ease-in-out hover:scale-105"
-              />
+      {/* Processed Image */}
+      {processedImageUrl && (
+        <div className="animate-fade-in">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold text-gray-800">Result</h2>
+            <div className="flex space-x-2">
               <button
                 onClick={handleDownload}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+                className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"
+                title="Download"
               >
-                Download Processed Image
+                <Download size={18} />
+              </button>
+              <button
+                onClick={clearFile}
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                title="Start Over"
+              >
+                <RotateCw size={18} />
               </button>
             </div>
           </div>
-        )}
-      </div>
+          <div className="border rounded-lg overflow-hidden bg-gray-100">
+            <img
+              src={processedImageUrl}
+              alt="Processed result"
+              className="w-full h-auto"
+            />
+          </div>
+          <div className="mt-3 text-center text-sm text-gray-500">
+            Right-click the image to save, or use the download button above
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -16,8 +16,16 @@ const Home = () => {
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
+      const previewUrl = URL.createObjectURL(selectedFile); // Create preview URL
       setFile(selectedFile);
-      navigate("/upload", { state: { file: selectedFile } });
+      navigate("/upload", {
+        state: {
+          image: {
+            file: selectedFile,
+            previewUrl: previewUrl,
+          },
+        },
+      });
     }
   };
 

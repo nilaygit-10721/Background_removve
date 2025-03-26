@@ -9,7 +9,7 @@ const activitySchema = new mongoose.Schema({
   actionType: {
     type: String,
     required: true,
-    enum: ["background-removal", "login", "signup"],
+    enum: ["background-removal", "login", "signup", "image-upload"],
   },
   imageUrl: {
     type: String,
